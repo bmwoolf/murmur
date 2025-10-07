@@ -51,5 +51,15 @@ python test_environment.py
 
 # 3. run pipeline
 from src.pipeline import run
-# insert run code when done
+```
+
+## Example usage
+```python
+expr_pred, pathway_scores, trait_scores = run(
+    vcf_path="path/to/sample.vcf",
+    out_dir="results/",
+    xatlas_h5ad="data/xatlas.h5ad",
+    msigdb_gmt="data/msigdb.gmt",
+    gwas_map="data/gwas_traits.tsv"
+)
 ```
