@@ -1,6 +1,7 @@
 import scanpy as sc
 import anndata as ad
 
+# load subset of xatlas data
 def load_subset(h5ad_path, n_genes=1000, n_cells=200000):
     adata = sc.read_h5ad(h5ad_path, backed="r")
     # pick highly variable genes (or fixed list)
