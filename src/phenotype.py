@@ -1,0 +1,3 @@
+def trait_scores_from_gwas(expr_vec, gene_index, trait2genes):
+    # simple dot-product over standardized expression for genes in trait
+    ...
