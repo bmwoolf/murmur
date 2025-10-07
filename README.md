@@ -3,7 +3,7 @@
 VCF → annotation → perturbation → pathways → phenotype
 
 
-## user steps 
+## Frontend user experience 
 1. upload VCF file (Nucleus, Nebula Genomics)
 2. user sees progress bars for:
     - variant annotation (VEP/SnpEff)
@@ -14,10 +14,37 @@ VCF → annotation → perturbation → pathways → phenotype
 3. a report shows how their unique variants ripple through genes, pathways, and traits
 
 
-## pipeline 
+## Backend computations
 1. VCF is uploaded
 2. annotate variants (VEP + SnpEff)
 3. measure perturbations (CPA trained/fine-tuned on X-atlas, factoring in personal variants)
 4. model disregulated pathways via chain reactions (PathDNN + Reactome)
 5. measure phenotype differences (DeepDR + GWAS Catalog)
 6. return results to user in pretty viualization
+
+
+## Environment setup
+Packages:
+- Python 3.10
+- PyTorch 2.6.0 with CUDA 12.4
+- scanpy & anndata (single-cell genomics analysis)
+- pandas & numpy
+- scikit-learn
+- cyvcf2 (VCF file processing)
+- networkx (graph analysis)
+- matplotlib & seaborn
+- scvi-tools (single-cell variational inference)
+
+## Quick Start
+
+```bash
+# 1. activate the environment
+conda activate murmur
+
+# 2. test the environment
+python test_environment.py
+
+# 3. run pipeline
+from src.pipeline import run
+# insert run code when done
+```
