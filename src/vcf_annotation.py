@@ -1,4 +1,4 @@
-import os, sys, subprocess, tempfile, shutil, gzip, csv
+import os, sys, subprocess, tempfile, shutil, gzip, csv, yaml
 from pathlib import Path
 
 """
@@ -18,11 +18,19 @@ Prereqs (choose one path):
    - pcingola/snpeff
 """
 
+def load_config():
+    """Load configuration from config.yml"""
+    config_path = Path(__file__).parent.parent / "config.yml"
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
 class Config:
+    _config = load_config()
+    
     reference = "GRCh38"
-    threads = 20  # CPU threads available- there isnt any GPU-based VEP or SnpEff alternatives
-    vep_cache_dir = str(Path.home() / ".vep")
-    snpeff_data_dir = os.environ.get("SNPEFF_DATA_DIR", "/usr/local/share/snpeff/data")
+    threads = _config['pipeline']['vcf_annotation']['threads']
+    vep_cache_dir = _config['pipeline']['vcf_annotation']['vep_cache_dir']
+    snpeff_data_dir = _config['pipeline']['vcf_annotation']['snpeff_data_dir']
     
     # common VEP plugins you might enable later: LoF, CADD, dbNSFP, gnomAD
     vep_plugins = []               # ie ["LoF,loftee_path:/path/to/loftee, ..."]

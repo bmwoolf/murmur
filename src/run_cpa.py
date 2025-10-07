@@ -1,8 +1,19 @@
 import torch, numpy as np
 from .train_cpa import CPA
 from sklearn.preprocessing import LabelEncoder
+import yaml
+from pathlib import Path
+
+def load_config():
+    """Load configuration from config.yml"""
+    config_path = Path(__file__).parent.parent / "config.yml"
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
 
 def simulate_transcriptome(model, gene_dose_df, le_gene, le_cell, cell_type="HEK293T"):
+    config = load_config()
+    gpu_memory_fraction = config['pipeline']['memory']['gpu_memory_fraction']
+    
     genes = gene_dose_df["gene"].tolist()
     doses = torch.tensor(gene_dose_df["dose"].values, dtype=torch.float32)
     gidx = torch.tensor(le_gene.transform([g if g in le_gene.classes_ else le_gene.classes_[0] for g in genes]))

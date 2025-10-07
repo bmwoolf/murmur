@@ -5,6 +5,14 @@ from .run_cpa import simulate_transcriptome
 from .pathdnn import load_gene_sets, pathway_scores
 from .phenotype import trait_scores_from_gwas
 from .vcf_annotation import annotate_vcf
+import yaml
+from pathlib import Path
+
+def load_config():
+    """Load configuration from config.yml"""
+    config_path = Path(__file__).parent.parent / "config.yml"
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
 
 # run full pipeline
 def run(vcf_path, out_dir, xatlas_h5ad, msigdb_gmt, gwas_map):
@@ -23,6 +31,7 @@ def run(vcf_path, out_dir, xatlas_h5ad, msigdb_gmt, gwas_map):
     Returns:
         tuple: (expr_pred, pathway_scores_dict, trait_scores)
     """
+    config = load_config()
     
     # step 1: annotate variants (VEP + SnpEff)
     print("~~~step 1: annotating variants with VEP and SnpEff~~~")
