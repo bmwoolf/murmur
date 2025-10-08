@@ -27,7 +27,7 @@ def load_config():
 class Config:
     _config = load_config()
     
-    reference = "GRCh38"
+    reference = _config['system']['reference_genome']
     threads = _config['pipeline']['vcf_annotation']['threads']
     vep_cache_dir = _config['pipeline']['vcf_annotation']['vep_cache_dir']
     snpeff_data_dir = _config['pipeline']['vcf_annotation']['snpeff_data_dir']
@@ -55,21 +55,6 @@ def ensure_tools_available():
         except Exception:
             raise RuntimeError(f"{tool} not found. Install via conda or use docker wrappers.")
 
-def detect_reference_build(vcf_path: str) -> str:
-    """
-    Peek VCF header for '##reference=' or '##contig=' hints.
-    Fallback to Config.reference.
-    """
-    opener = gzip.open if vcf_path.endswith(".gz") else open
-    with opener(vcf_path, "rt") as fh:
-        for line in fh:
-            if not line.startswith("##"):
-                break
-            if "GRCh37" in line or "b37" in line:
-                return "GRCh37"
-            if "GRCh38" in line or "hg38" in line:
-                return "GRCh38"
-    return Config.reference
 
 def bgzip_and_index(vcf_in: str) -> str:
     """
@@ -192,7 +177,7 @@ def annotate_vcf(vcf_path: str, out_dir: str) -> dict:
     ensure_tools_available()
     os.makedirs(out_dir, exist_ok=True)
     vcf_gz = bgzip_and_index(vcf_path)
-    ref = detect_reference_build(vcf_gz)
+    ref = Config.reference
 
     vep_tsv = str(Path(out_dir) / "vep.tsv")
     run_vep(vcf_gz, vep_tsv, ref)

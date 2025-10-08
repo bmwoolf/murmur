@@ -46,11 +46,11 @@ Packages:
 # 1. activate the environment
 conda activate murmur
 
-# 2. test the environment
-python test_environment.py
+# 2. fill out machine config
+./config/generate_config.sh
 
 # 3. run pipeline
-from src.pipeline import run
+./src/pipeline.py
 ```
 
 ## Example usage

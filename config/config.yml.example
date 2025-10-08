@@ -1,0 +1,67 @@
+# murmur pipeline configuration template
+# This file will be automatically populated by generate_config.sh
+
+# machine specifications
+system:
+  # operating system
+  os: "{{OS_NAME}} {{OS_VERSION}}"
+  kernel: "{{KERNEL_VERSION}}"
+  architecture: "{{ARCHITECTURE}}"
+  
+  # cpu
+  cpu:
+    model: "{{CPU_MODEL}}"
+    physical_cores: {{PHYSICAL_CORES}}
+    logical_cores: {{LOGICAL_CORES}}
+    frequency_mhz: {{CPU_FREQUENCY}}
+    
+  # memory
+  memory:
+    total_ram_gb: {{TOTAL_RAM_GB}}
+    available_ram_gb: {{AVAILABLE_RAM_GB}}
+    
+  # storage
+  storage:
+    total_gb: {{TOTAL_STORAGE_GB}}
+    free_gb: {{FREE_STORAGE_GB}}
+    
+  # gpu (if available)
+  gpu:
+    model: "{{GPU_MODEL}}"
+    vram_gb: {{GPU_VRAM_GB}}
+    compute_capability: "{{GPU_COMPUTE_CAPABILITY}}"
+    multiprocessors: {{GPU_MULTIPROCESSORS}}
+    cuda_version: "{{CUDA_VERSION}}"
+  
+  # reference genome (moved here to match vcf_annotation.py access)
+  reference_genome: "{{REFERENCE_GENOME}}"
+
+# software environment
+software:
+  python_version: "{{PYTHON_VERSION}}"
+  pytorch_version: "{{PYTORCH_VERSION}}"
+  
+# pipeline configuration
+pipeline:
+  # vcf annotation settings
+  vcf_annotation:
+    threads: {{ANNOTATION_THREADS}}
+    vep_cache_dir: "{{VEP_CACHE_DIR}}"
+    snpeff_data_dir: "{{SNPEFF_DATA_DIR}}"
+    
+  # cpa model settings
+  cpa_model:
+    batch_size: {{CPA_BATCH_SIZE}}
+    learning_rate: {{CPA_LEARNING_RATE}}
+    max_epochs: {{CPA_MAX_EPOCHS}}
+    
+  # memory management
+  memory:
+    max_ram_usage_gb: {{MAX_RAM_USAGE_GB}}
+    gpu_memory_fraction: {{GPU_MEMORY_FRACTION}}
+    
+  # output settings
+  output:
+    intermediate_files: {{KEEP_INTERMEDIATE_FILES}}
+    keep_temp_files: {{KEEP_TEMP_FILES}}
+    compression: "{{COMPRESSION_TYPE}}"
