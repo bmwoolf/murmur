@@ -43,6 +43,13 @@ software:
   
 # pipeline configuration
 pipeline:
+  # input files
+  input:
+    vcf_path: "{{VCF_INPUT_PATH}}"
+    xatlas_h5ad: "{{XATLAS_PATH}}"
+    msigdb_gmt: "{{MSIGDB_PATH}}"
+    gwas_map: "{{GWAS_MAP_PATH}}"
+    
   # vcf annotation settings
   vcf_annotation:
     threads: {{ANNOTATION_THREADS}}
@@ -62,6 +69,7 @@ pipeline:
     
   # output settings
   output:
+    base_dir: "{{OUTPUT_BASE_DIR}}"
     intermediate_files: {{KEEP_INTERMEDIATE_FILES}}
     keep_temp_files: {{KEEP_TEMP_FILES}}
     compression: "{{COMPRESSION_TYPE}}"
