@@ -9,7 +9,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 TEMPLATE_FILE="$SCRIPT_DIR/config.yml.example"
 OUTPUT_FILE="$PROJECT_ROOT/config.yml"
 
-echo "🔍 Detecting system information..."
+echo "~~~detecting system information~~~"
 
 # OS information
 OS_NAME=$(lsb_release -si 2>/dev/null || echo "Linux")
@@ -85,17 +85,15 @@ KEEP_INTERMEDIATE_FILES="true"
 KEEP_TEMP_FILES="false"
 COMPRESSION_TYPE="gzip"
 
-echo "📝 Generating config.yml..."
-
 # Check if template exists
 if [ ! -f "$TEMPLATE_FILE" ]; then
-    echo "❌ Error: Template file $TEMPLATE_FILE not found!"
+    echo "Error: Template file $TEMPLATE_FILE not found!"
     exit 1
 fi
 
 # Create backup of existing config if it exists
 if [ -f "$OUTPUT_FILE" ]; then
-    echo "📦 Creating backup of existing config.yml..."
+    echo "~~~creating backup of existing config.yml~~~"
     cp "$OUTPUT_FILE" "$OUTPUT_FILE.backup.$(date +%Y%m%d_%H%M%S)"
 fi
 
@@ -133,9 +131,9 @@ sed -e "s/{{OS_NAME}}/$OS_NAME/g" \
     -e "s/{{COMPRESSION_TYPE}}/$COMPRESSION_TYPE/g" \
     "$TEMPLATE_FILE" > "$OUTPUT_FILE"
 
-echo "✅ Successfully generated config.yml at $OUTPUT_FILE"
+echo "Successfully generated config.yml at $OUTPUT_FILE"
 echo ""
-echo "📊 System Summary:"
+echo "System Summary:"
 echo "   OS: $OS_NAME $OS_VERSION"
 echo "   CPU: $CPU_MODEL ($LOGICAL_CORES cores)"
 echo "   RAM: ${TOTAL_RAM_GB}GB total, ${AVAILABLE_RAM_GB}GB available"
@@ -143,9 +141,9 @@ echo "   GPU: $GPU_MODEL (${GPU_VRAM_GB}GB VRAM)"
 echo "   Python: $PYTHON_VERSION"
 echo "   PyTorch: $PYTORCH_VERSION"
 echo ""
-echo "🔧 Pipeline Settings:"
+echo "Pipeline Settings:"
 echo "   Annotation threads: $ANNOTATION_THREADS"
 echo "   CPA batch size: $CPA_BATCH_SIZE"
 echo "   Max RAM usage: ${MAX_RAM_USAGE_GB}GB"
 echo ""
-echo "💡 You can now edit $OUTPUT_FILE to customize settings as needed."
+echo "You can now edit $OUTPUT_FILE to customize settings as needed."
