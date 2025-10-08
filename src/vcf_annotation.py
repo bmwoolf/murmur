@@ -56,6 +56,36 @@ def ensure_tools_available():
         except Exception:
             raise RuntimeError(f"{tool} not found. Install via conda or use docker wrappers.")
 
+def setup_databases():
+    """Download and setup VEP cache and SnpEff databases if needed."""
+    config = load_config()
+    reference = config['system']['reference_genome']
+    
+    # Setup VEP cache
+    vep_cache_dir = os.path.expanduser(Config.vep_cache_dir)
+    if not os.path.exists(os.path.join(vep_cache_dir, "homo_sapiens")):
+        print("Downloading VEP cache for GRCh38...")
+        subprocess.run([
+            "vep_install", "-a", "cf", "-s", "homo_sapiens", 
+            "-y", reference, "-c", vep_cache_dir
+        ], check=True)
+        print("VEP cache downloaded successfully!")
+    else:
+        print("VEP cache already exists")
+    
+    # Setup SnpEff database
+    genome_name = snpeff_genome_name(reference)
+    snpeff_data_dir = Config.snpeff_data_dir
+    
+    # Check if SnpEff database exists
+    db_path = os.path.join(snpeff_data_dir, genome_name)
+    if not os.path.exists(db_path):
+        print(f"Downloading SnpEff database {genome_name}...")
+        subprocess.run(["snpEff", "download", genome_name], check=True)
+        print("SnpEff database downloaded successfully!")
+    else:
+        print("SnpEff database already exists")
+
 
 def bgzip_and_index(vcf_in: str) -> str:
     """
@@ -316,8 +346,8 @@ def write_gene_dose_csv(annot_tsv: str, out_csv: str):
 def annotate_vcf(vcf_path: str, out_dir: str) -> dict:
     """
     Full flow:
-      1) Ensure bgzip+tabix.
-      2) Detect reference build (or use config).
+      1) Ensure tools and databases are available
+      2) Ensure bgzip+tabix.
       3) Run VEP -> vep.tsv
       4) Run SnpEff -> snpeff.vcf; parse -> snpeff.tsv
       5) Merge -> annotated.tsv (canonical tidy table)
@@ -325,6 +355,7 @@ def annotate_vcf(vcf_path: str, out_dir: str) -> dict:
     Returns paths.
     """
     ensure_tools_available()
+    setup_databases() # VEP and SnpEff
     os.makedirs(out_dir, exist_ok=True)
     vcf_gz = bgzip_and_index(vcf_path)
     ref = Config.reference
