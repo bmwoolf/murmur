@@ -62,7 +62,9 @@ fi
 ANNOTATION_THREADS=$((LOGICAL_CORES > 4 ? LOGICAL_CORES - 4 : LOGICAL_CORES))
 REFERENCE_GENOME="GRCh38"
 VEP_CACHE_DIR="~/.vep"
-SNPEFF_DATA_DIR="/usr/local/share/snpeff/data"
+SNPEFF_DATA_DIR="~/.snpeff/data"
+VEP_DOCKER_IMAGE="ensemblorg/ensembl-vep:release_109.3"
+SNPEFF_DOCKER_IMAGE="staphb/snpeff:latest"
 
 # CPA model settings based on available resources
 if [ "$GPU_VRAM_GB" -gt 8 ]; then
@@ -121,6 +123,8 @@ sed -e "s/{{OS_NAME}}/$OS_NAME/g" \
     -e "s/{{REFERENCE_GENOME}}/$REFERENCE_GENOME/g" \
     -e "s|{{VEP_CACHE_DIR}}|$VEP_CACHE_DIR|g" \
     -e "s|{{SNPEFF_DATA_DIR}}|$SNPEFF_DATA_DIR|g" \
+    -e "s|{{VEP_DOCKER_IMAGE}}|$VEP_DOCKER_IMAGE|g" \
+    -e "s|{{SNPEFF_DOCKER_IMAGE}}|$SNPEFF_DOCKER_IMAGE|g" \
     -e "s/{{CPA_BATCH_SIZE}}/$CPA_BATCH_SIZE/g" \
     -e "s/{{CPA_LEARNING_RATE}}/$CPA_LEARNING_RATE/g" \
     -e "s/{{CPA_MAX_EPOCHS}}/$CPA_MAX_EPOCHS/g" \

@@ -55,6 +55,8 @@ pipeline:
     threads: {{ANNOTATION_THREADS}}
     vep_cache_dir: "{{VEP_CACHE_DIR}}"
     snpeff_data_dir: "{{SNPEFF_DATA_DIR}}"
+    vep_docker_image: "{{VEP_DOCKER_IMAGE}}"
+    snpeff_docker_image: "{{SNPEFF_DOCKER_IMAGE}}"
     
   # cpa model settings
   cpa_model:
