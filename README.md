@@ -47,10 +47,10 @@ Packages:
 conda activate murmur
 
 # 2. fill out machine config
-./config/generate_config.sh
+python ./config/generate_config.sh
 
 # 3. run pipeline
-./src/pipeline.py
+python -m src.pipeline
 ```
 
 ## Example usage
