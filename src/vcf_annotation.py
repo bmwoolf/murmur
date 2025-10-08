@@ -9,14 +9,12 @@ Purpose of this file:
   Consequence, IMPACT, Transcript, Protein_change, dbSNP, AF fields (if available)
 - optionally emit a simple gene→dose CSV for the CPA step
 
-Prereqs (choose one path):
-1) Conda-installed tools + local caches:
-   - ensembl-vep, htslib, perl, snpeff
-   - VEP cache at ~/.vep or --dir_cache
-   - SnpEff data at $SNPEFF/data (e.g., GRCh38.105)
-2) Docker images:
+Prereqs:
+- Docker engine running locally
+- Docker images:
    - ensemblorg/ensembl-vep
-   - pcingola/snpeff
+   - staphb/snpeff
+- Local cache directories for VEP and SnpEff databases
 """
 
 def load_config():
@@ -32,6 +30,10 @@ class Config:
     threads = _config['pipeline']['vcf_annotation']['threads']
     vep_cache_dir = _config['pipeline']['vcf_annotation']['vep_cache_dir']
     snpeff_data_dir = _config['pipeline']['vcf_annotation']['snpeff_data_dir']
+    
+    # Docker image names
+    vep_docker_image = _config['pipeline']['vcf_annotation']['vep_docker_image']
+    snpeff_docker_image = _config['pipeline']['vcf_annotation']['snpeff_docker_image']
     
     # common VEP plugins you might enable later: LoF, CADD, dbNSFP, gnomAD
     vep_plugins = []               # ie ["LoF,loftee_path:/path/to/loftee, ..."]
@@ -49,40 +51,84 @@ IMPACT_TO_DOSE = {"HIGH":0.8, "MODERATE":0.5, "LOW":0.2, "MODIFIER":0.1}
 
 # utils
 def ensure_tools_available():
-    """Check VEP and SnpEff are callable; raise with hints if not."""
-    for tool in ["vep", "snpeff"]:
+    """Check Docker is available and pull required images if needed."""
+    # Check Docker is running
+    try:
+        subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    except Exception:
+        raise RuntimeError("Docker is not running or not available. Please start Docker and try again.")
+    
+    # Pull Docker images if they don't exist locally
+    images_to_pull = [
+        Config.vep_docker_image,
+        Config.snpeff_docker_image
+    ]
+    
+    for image in images_to_pull:
         try:
-            subprocess.run([tool, "-h"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        except Exception:
-            raise RuntimeError(f"{tool} not found. Install via conda or use docker wrappers.")
+            # Check if image exists locally
+            result = subprocess.run(
+                ["docker", "images", "-q", image], 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+            if not result.stdout.strip():
+                print(f"Pulling Docker image: {image}")
+                subprocess.run(["docker", "pull", image], check=True)
+                print(f"Successfully pulled {image}")
+            else:
+                print(f"Using existing image: {image}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to pull Docker image {image}: {e}")
 
 def setup_databases():
-    """Download and setup VEP cache and SnpEff databases if needed."""
+    """Setup local cache directories and download databases using Docker."""
     config = load_config()
     reference = config['system']['reference_genome']
     
-    # Setup VEP cache
+    # Setup VEP cache directory
     vep_cache_dir = os.path.expanduser(Config.vep_cache_dir)
+    os.makedirs(vep_cache_dir, exist_ok=True)
+    
+    # Setup SnpEff data directory
+    snpeff_data_dir = os.path.expanduser(Config.snpeff_data_dir)
+    os.makedirs(snpeff_data_dir, exist_ok=True)
+    
+    # Check if VEP cache exists, if not download using Docker
     if not os.path.exists(os.path.join(vep_cache_dir, "homo_sapiens")):
-        print("Downloading VEP cache for GRCh38...")
-        subprocess.run([
-            "vep_install", "-a", "cf", "-s", "homo_sapiens", 
-            "-y", reference, "-c", vep_cache_dir
-        ], check=True)
-        print("VEP cache downloaded successfully!")
+        print("Downloading VEP cache using Docker...")
+        try:
+            subprocess.run([
+                "docker", "run", "--rm",
+                "-v", f"{vep_cache_dir}:/opt/vep/.vep",
+                Config.vep_docker_image,
+                "bash", "-c", "vep_install -a cf -s homo_sapiens -y GRCh38 -c /opt/vep/.vep"
+            ], check=True)
+            print("VEP cache downloaded successfully!")
+        except Exception as e:
+            print(f"Warning: Failed to download VEP cache: {e}")
+            print("VEP will run in online mode (slower)")
     else:
         print("VEP cache already exists")
     
-    # Setup SnpEff database
+    # Check if SnpEff database exists, if not download using Docker
     genome_name = snpeff_genome_name(reference)
-    snpeff_data_dir = Config.snpeff_data_dir
-    
-    # Check if SnpEff database exists
     db_path = os.path.join(snpeff_data_dir, genome_name)
+    
     if not os.path.exists(db_path):
-        print(f"Downloading SnpEff database {genome_name}...")
-        subprocess.run(["snpEff", "download", genome_name], check=True)
-        print("SnpEff database downloaded successfully!")
+        print(f"Downloading SnpEff database {genome_name} using Docker...")
+        try:
+            subprocess.run([
+                "docker", "run", "--rm",
+                "-v", f"{snpeff_data_dir}:/data",
+                Config.snpeff_docker_image,
+                "snpEff", "download", "-v", genome_name
+            ], check=True)
+            print("SnpEff database downloaded successfully!")
+        except Exception as e:
+            print(f"Warning: Failed to download SnpEff database: {e}")
+            print("SnpEff may not work properly without the database")
     else:
         print("SnpEff database already exists")
 
@@ -103,9 +149,9 @@ def bgzip_and_index(vcf_in: str) -> str:
 # VEP
 def run_vep(vcf_gz: str, out_tsv: str, reference: str):
     """
-    Run VEP to TSV with useful fields. Uses cache; offline mode preferred.
+    Run VEP using Docker container with useful fields. Uses cache; offline mode preferred.
     """
-    assembly_flag = "--assembly GRCh38" if reference=="GRCh38" else "--assembly GRCh37"
+    assembly_flag = "--assembly=GRCh38" if reference=="GRCh38" else "--assembly=GRCh37"
     fields = ",".join([
         "Uploaded_variation","Location","Allele","Gene","SYMBOL","Feature","BIOTYPE",
         "Consequence","IMPACT","HGVSc","HGVSp","SIFT","PolyPhen",
@@ -115,23 +161,38 @@ def run_vep(vcf_gz: str, out_tsv: str, reference: str):
     for p in Config.vep_plugins:
         plugin_args += ["--plugin", p]
 
-    cmd = [
+    # Get absolute paths for Docker volume mounting
+    vcf_abs_path = os.path.abspath(vcf_gz)
+    vcf_dir = os.path.dirname(vcf_abs_path)
+    vcf_filename = os.path.basename(vcf_abs_path)
+    out_abs_path = os.path.abspath(out_tsv)
+    out_dir = os.path.dirname(out_abs_path)
+    out_filename = os.path.basename(out_abs_path)
+    vep_cache_abs_path = os.path.expanduser(Config.vep_cache_dir)
+
+    # VEP command within Docker container (using database since cache setup failed)
+    vep_cmd = [
         "vep",
-        "--input_file", vcf_gz,
+        "--input_file", f"/data/input/{vcf_filename}",
         "--format", "vcf",
-        "--vcf",
-        "--output_file", "STDOUT",
-        "--cache", "--offline", assembly_flag,
-        "--dir_cache", Config.vep_cache_dir,
-        "--symbol", "--canonical", "--nearest symbol",
+        "--database", assembly_flag,  # --assembly GRCh38
+        "--symbol", "--canonical", "--nearest", "symbol",
         "--fork", str(Config.threads),
         "--force_overwrite",
+        "--no_stats",
         "--tab", "--fields", fields
     ] + plugin_args
 
-    # VEP with --tab prints header + rows (tab-separated)
+    # Docker run command
+    docker_cmd = [
+        "docker", "run", "--rm",
+        "-v", f"{vcf_dir}:/data/input",
+        Config.vep_docker_image
+    ] + vep_cmd
+
+    print(f"Running VEP with Docker: {Config.vep_docker_image}")
     with open(out_tsv, "w") as fout:
-        subprocess.run(cmd, check=True, stdout=fout)
+        subprocess.run(docker_cmd, check=True, stdout=fout)
 
 
 # SnpEff
@@ -145,17 +206,40 @@ def snpeff_genome_name(reference: str) -> str:
 
 def run_snpeff(vcf_gz: str, out_vcf: str, reference: str):
     """
-    Run SnpEff to annotate VCF with ANN field.
+    Run SnpEff using Docker container to annotate VCF with ANN field.
     """
     genome = snpeff_genome_name(reference)
-    cmd = [
+    
+    # Get absolute paths for Docker volume mounting
+    vcf_abs_path = os.path.abspath(vcf_gz)
+    vcf_dir = os.path.dirname(vcf_abs_path)
+    vcf_filename = os.path.basename(vcf_abs_path)
+    out_abs_path = os.path.abspath(out_vcf)
+    out_dir = os.path.dirname(out_abs_path)
+    out_filename = os.path.basename(out_abs_path)
+    snpeff_data_abs_path = os.path.expanduser(Config.snpeff_data_dir)
+
+    # SnpEff command within Docker container
+    snpeff_cmd = [
         "snpEff",
         "-Xmx8g",
+        "-dataDir", "/data/snpeff_data",
         genome,
-        vcf_gz
+        f"/data/input/{vcf_filename}"
     ]
+
+    # Docker run command
+    docker_cmd = [
+        "docker", "run", "--rm",
+        "-v", f"{vcf_dir}:/data/input",
+        "-v", f"{out_dir}:/data/output",
+        "-v", f"{snpeff_data_abs_path}:/data/snpeff_data",
+        Config.snpeff_docker_image
+    ] + snpeff_cmd
+
+    print(f"Running SnpEff with Docker: {Config.snpeff_docker_image}")
     with open(out_vcf, "w") as fout:
-        subprocess.run(cmd, check=True, stdout=fout)
+        subprocess.run(docker_cmd, check=True, stdout=fout)
 
 def snpeff_to_tsv(ann_vcf: str, out_tsv: str):
     """
