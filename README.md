@@ -63,3 +63,27 @@ expr_pred, pathway_scores, trait_scores = run(
     gwas_map="data/gwas_traits.tsv"
 )
 ```
+
+
+
+## Setup commands
+```bash
+# VEP annotation
+# allow the docker container to write to local /results folder (not most secure practice)
+chmod 777 results/
+
+# run VEP on your VCF file
+sudo docker run --rm \
+  -v {{VCF_DIR}}:/data/input \
+  -v {{PROJECT_DIR}}/results:/data/output \
+  ensemblorg/ensembl-vep:release_109.3 \
+  vep --input_file /data/input/{{VCF_FILENAME}} \
+  --output_file /data/output/{{OUTPUT_FILENAME}} \
+  --database --assembly=GRCh38 --tab --no_stats --force_overwrite
+```
+
+#### Replace placeholders:
+- `{{VCF_DIR}}`: directory containing your VCF file
+- `{{VCF_FILENAME}}`: name of your VCF file (ie `sample.vcf.gz`)
+- `{{OUTPUT_FILENAME}}`: desired output name (ie `annotated_variants.tsv`)
+- `{{PROJECT_DIR}}`: path to this murmur project directory
