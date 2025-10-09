@@ -46,9 +46,11 @@ pipeline:
   # input files
   input:
     vcf_path: "{{VCF_INPUT_PATH}}"
-    xatlas_h5ad: "{{XATLAS_PATH}}"
-    msigdb_gmt: "{{MSIGDB_PATH}}"
-    gwas_map: "{{GWAS_MAP_PATH}}"
+    # X-Atlas/Orion: null = streaming mode, or path to local h5ad file
+    xatlas_h5ad: null  # Streaming from Hugging Face (recommended)
+    xatlas_cell_line: "HCT116"  # HCT116 or HEK293T
+    msigdb_gmt: "data/msigdb.gmt"
+    gwas_map: "data/gwas_traits.tsv"
     
   # vcf annotation settings
   vcf_annotation:

@@ -66,6 +66,10 @@ SNPEFF_DATA_DIR="~/.snpeff/data"
 VEP_DOCKER_IMAGE="ensemblorg/ensembl-vep:release_109.3"
 SNPEFF_DOCKER_IMAGE="staphb/snpeff:latest"
 
+# X-Atlas streaming configuration
+XATLAS_H5AD="null"  # null = streaming mode (recommended)
+XATLAS_CELL_LINE="HCT116"  # HCT116 or HEK293T
+
 # CPA model settings based on available resources
 if [ "$GPU_VRAM_GB" -gt 8 ]; then
     CPA_BATCH_SIZE="512"
