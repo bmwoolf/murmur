@@ -65,6 +65,8 @@ pipeline:
     batch_size: {{CPA_BATCH_SIZE}}
     learning_rate: {{CPA_LEARNING_RATE}}
     max_epochs: {{CPA_MAX_EPOCHS}}
+    model_save_path: "results/cpa_model.pth"
+    test_model_path: "results/cpa_test_model.pth"
     
   # memory management
   memory:
