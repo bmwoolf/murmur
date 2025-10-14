@@ -40,8 +40,8 @@ def run():
     if not os.path.exists(vcf_path):
         raise FileNotFoundError(f"VCF file not found: {vcf_path}")
     
-    # step 1: annotate variants (VEP + SnpEff)
-    print("~~~step 1: annotating variants with VEP and SnpEff~~~")
+    # step 1: annotate variants (VEP)
+    print("~~~step 1: annotating variants with VEP~~~")
     print(f"   Input VCF: {vcf_path}")
     print(f"   Output directory: {out_dir}")
     annotation_results = annotate_vcf(vcf_path, out_dir)
